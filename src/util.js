@@ -45,23 +45,101 @@ Util.Vector.prototype.add = function (that) {
 };
 
 /*********** Util.InstanceManagement ***********/
-Util.InstanceManagement = function () {
-	this.owner = this.constructor;
+Util.applyInstanceManagement = function (Class) {
+	Class.activeInstance = [];
+	Class.idleInstance = [];
+
+	Class.updateInstances = function () {
+		for (var i in this.activeInstance) {
+			this.activeInstance[i].update();
+		}
+	};
+
+	Class.prototype.array = null;
+	Class.prototype.index = null;
+
+	Class.prototype.add = function (setActive) {
+		this.array = setActive ? Class.activeInstance : Class.idleInstance;
+		this.index = this.array.length;
+		this.array.push(this);
+	};
+
+	Class.prototype.remove = function () {
+		for (var i = this.index; i < this.array.length - 1;  i++) {
+			this.array[i] = this.array[i + 1];
+			this.array[i].index--;
+		}
+	};
+
+	Class.prototype.pause = function () {
+		if (this.array == Class.activeInstance) {
+			this.remove();
+			this.add(false);
+		}
+	};
+
+	Class.prototype.resume = function () {
+		if (this.array == Class.idleInstance) {
+			this.remove();
+			this.add(true);
+		}
+	};
+
+	Class.prototype.update = function () {
+		// precisa ser definida
+	};
 };
 
-Util.InstanceManagement.instance = [];
 
-Util.InstanceManagement.prototype.add = function () {
-	this.index = this.owner.instance.length;
-	this.owner.instance.push(this);
+/*********** Util.Graph ***********/
+Util.Graph = function (position, barColor, maximumNumberOfBars, maximumBarHeight, barWidth) {
+	// posição do gráfico
+	this.position = position;
+	// cor das barras
+	this.barColor = barColor;
+	// máxima quantidade de barras
+	this.maximumNumberOfBars = maximumNumberOfBars;
+	// tamanho máximo das barras
+	this.maximumBarHeight = maximumBarHeight;
+	// grossura da barra
+	this.barWidth = barWidth;
+
+	// maior valor do array value
+	this.greaterValue = 0;
+	// valores do gráfico
+	this.value = [];
 };
 
-Util.InstanceManagement.prototype.remove = function () {
-	this.owner.instance.splice(this.index, 1);
-};
+Util.Graph.prototype.draw = function () {
+	Engine.context.fillStyle = this.barColor;
 
-Util.InstanceManagement.updateInstances = function () {
-	for (var i in this.instance) {
-		this.instance[i].update();
+	var x, y;
+	for (var i in this.value) {
+		x = this.position.x + (this.maximumNumberOfBars - i) * this.barWidth;
+		y = this.position.y + (this.maximumBarHeight - this.maximumBarHeight * (this.value[i] / this.greaterValue));
+		Engine.context.fillRect(x, y, this.barWidth, this.maximumBarHeight - (y - this.position.y));
 	}
 };
+
+Util.Graph.prototype.update = function (nextValue) {
+	this.value.unshift(nextValue);
+
+	if (this.value.length > this.maximumNumberOfBars) {
+		this.value.pop();
+	}
+
+	// determina o maior valor do array
+	if (nextValue > this.greaterValue) {
+		this.greaterValue = nextValue;
+	}
+};
+
+
+/*
+	Ideia para implementações
+
+	Classe que gera um objeto com dois atributos:
+		array: o array que ele aponta
+		index: a posição deste array
+
+*/

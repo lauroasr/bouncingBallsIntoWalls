@@ -1,5 +1,5 @@
 // array de bolas
-var ball = [], hud;
+var ball = [], debug;
 
 
 /*		cx.save();
@@ -35,9 +35,10 @@ var ball = [], hud;
 
  */
 Engine.beforeLoop = function () {
-	hud = new Environment.Hud(new Util.Vector(Engine.canvas.width - 105, 5), true, function () {
-		return Environment.Entity.instance.length + " entities";
-	}, 500);
+	debug = new Engine.Window.Debug(new Util.Vector(Engine.canvas.width - 105, 5), true, 500, function () {
+		return Environment.Entity.activeInstance.length + " entities";
+	});
+
 	Engine.context.fillText("Press any key to start the loop", 100, 100);
 
 
@@ -55,7 +56,7 @@ Engine.beforeLoop = function () {
 
 
 Engine.main = function () {
-	hud.draw();
+
 };
 
 
@@ -86,3 +87,30 @@ Son.prototype.constructor = Son;
 
  DO THE SECOND WAY!
 */
+
+
+onload = function () {
+	var a = function () {};
+	a.boob = "hello";
+
+	a.doStuff = function () {
+		alert("a");
+	};
+
+	var copy = a.doStuff;
+	a.doStuff = function () {
+		copy();
+		alert("b");
+		alert("name:" + this.boob + ":");
+	};
+	a.doStuff();
+
+	copy = a.doStuff;
+	a.doStuff = function () {
+		alert(this.boob);
+		copy();
+		alert("c");
+
+	};
+	a.doStuff();
+};
