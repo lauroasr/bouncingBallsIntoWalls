@@ -119,14 +119,24 @@ Engine.Time.getTimeout = (function () {
 
 
 /*********** Engine.Time.Event ***********/
-Engine.Time.Event = function (timeout, callback, timeoutCallback) {
-
+Engine.Time.Event = function (timeout, callback, intervalCallback, parent) {
 	// tempo de espera do evento
 	this.timeout = timeout;
-	// função que será chamada após cada intervalo
-	this.callback = callback;
-	// função que será chamada a cada update
-	this.timeoutCallback = timeoutCallback;
+
+	// checa se as funções tem um pai
+	if (parent)  {
+		// função que será chamada por timeout
+		this.callback = function () {
+			parent[callback]();
+		};
+		// função que será chamada por update
+		this.intervalCallback = function () {
+			parent[intervalCallback]();
+		};
+	} else {
+		this.callback = callback;
+		this.intervalCallback = intervalCallback;
+	}
 
 	// adiciona a instância ao array da classe
 	this.add(true);
@@ -142,7 +152,7 @@ Engine.Time.Event.prototype.update = function () {
 		this.milliseconds = currentTime;
 		this.callback();
 	}
-	this.timeoutCallback();
+	this.intervalCallback();
 };
 
 /*********** Engine.Window ***********/
@@ -162,33 +172,11 @@ Engine.Window.Debug = function (position, showFpsGraph, updateRate, getString) {
 	// função que recupera uma string de informações
 	this.getString = getString;
 
-
-	this.update = function () {
-		this.fps = Engine.Time.fps + "fps";
-	};
-
-	this.draw = function () {
-		Engine.context.fillStyle = this.backgroundColor;
-		Engine.context.fillRect(this.position.x, this.position.y, this.width, this.height);
-
-		Engine.context.strokeStyle = this.borderColor;
-		Engine.context.lineWidth = this.borderWidth;
-		Engine.context.strokeRect(this.position.x, this.position.y, this.width, this.height);
-
-		Engine.context.font = this.font;
-		Engine.context.textAlign = "center";
-		Engine.context.fillStyle = "black";
-		// imprime o texto dentro do hud centralizado
-		Engine.context.fillText(this.fps, this.position.x + (this.width / 2), this.position.y + (this.height / 2));
-	};
-
-
-
 	if (showFpsGraph) {
-		var draw = this.draw;
+		this.draw1 = this.draw;
 
 		this.draw = function () {
-			draw();
+			this.draw1();
 
 			// imprime o grafico
 			this.graph.draw();
@@ -202,24 +190,22 @@ Engine.Window.Debug = function (position, showFpsGraph, updateRate, getString) {
 
 		this.graph = new Util.Graph(this.position.add(graphOffset), "black", graphBars, graphHeight, graphBarWidth);
 
-		var update = this.update;
+		this.update1 = this.update;
 
-
-		var a = this;
 		this.update = function () {
-			update();
+			this.update1();
 
-			a.graph.update(Engine.fps);
+			this.graph.update(Engine.fps);
 			// atualiza a cor do gráfico baseado no fps atual
-			a.graph.barColor = Util.Color.getTransition((Engine.Time.fps - Engine.Time.MINIMUM_FRAMES_PER_SECOND) / Engine.Time.MINIMUM_FRAMES_PER_SECOND, 0.5);
+			this.graph.barColor = Util.Color.getTransition((Engine.Time.fps - Engine.Time.MINIMUM_FRAMES_PER_SECOND) / Engine.Time.MINIMUM_FRAMES_PER_SECOND, 0.5);
 		};
 	}
 
 	if (getString) {
-		var draw = this.draw;
+		this.draw2 = this.draw;
 
 		this.draw = function () {
-			draw();
+			this.draw2();
 
 			// imprime a string
 			Engine.context.font = "12px Arial";
@@ -228,8 +214,25 @@ Engine.Window.Debug = function (position, showFpsGraph, updateRate, getString) {
 		}
 	}
 
-	this.timeEvent = new Engine.Time.Event(updateRate, this.update, this.draw);
+	this.timeEvent = new Engine.Time.Event(updateRate, "update", "draw", this);
 };
 
 
+Engine.Window.Debug.prototype.update = function () {
+	this.fps = Engine.Time.fps + "fps";
+};
 
+Engine.Window.Debug.prototype.draw = function () {
+	Engine.context.fillStyle = this.backgroundColor;
+	Engine.context.fillRect(this.position.x, this.position.y, this.width, this.height);
+
+	Engine.context.strokeStyle = this.borderColor;
+	Engine.context.lineWidth = this.borderWidth;
+	Engine.context.strokeRect(this.position.x, this.position.y, this.width, this.height);
+
+	Engine.context.font = this.font;
+	Engine.context.textAlign = "center";
+	Engine.context.fillStyle = "black";
+	// imprime o texto dentro do hud centralizado
+	Engine.context.fillText(this.fps, this.position.x + (this.width / 2), this.position.y + (this.height / 2));
+};

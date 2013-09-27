@@ -89,28 +89,23 @@ Son.prototype.constructor = Son;
 */
 
 
-onload = function () {
-	var a = function () {};
-	a.boob = "hello";
 
-	a.doStuff = function () {
-		alert("a");
-	};
 
-	var copy = a.doStuff;
-	a.doStuff = function () {
-		copy();
-		alert("b");
-		alert("name:" + this.boob + ":");
-	};
-	a.doStuff();
+/*onload = function () {
+	function Super() {
+		this.name = "Lauro";
 
-	copy = a.doStuff;
-	a.doStuff = function () {
-		alert(this.boob);
-		copy();
-		alert("c");
+		this.exec = function () {
+			alert("." + this.name + ".");
+		};
+	}
 
-	};
-	a.doStuff();
-};
+	var a = new Super();
+
+	(function (func) {
+		func();
+	})(function () {
+		a.exec(obj);
+	});
+};*/
+
