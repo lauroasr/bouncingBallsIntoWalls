@@ -35,8 +35,11 @@ var ball = [], debug;
 
  */
 Engine.beforeLoop = function () {
-	debug = new Engine.Window.Debug(new Util.Vector(Engine.canvas.width - 105, 5), true, 500, function () {
-		return Environment.Entity.activeInstance.length + " entities";
+	debug = new Engine.Window.Debug(new Util.Vector(Engine.canvas.width - 105, 5), true, 1000, function () {
+		return [
+			Environment.Entity.activeInstance.length + " entities",
+			Util.Time.getCurrentMilliseconds()
+		];
 	});
 
 	Engine.context.fillText("Press any key to start the loop", 100, 100);
@@ -44,11 +47,16 @@ Engine.beforeLoop = function () {
 
 
 	document.onkeyup = function () {
-		document.onkeyup = null;
-
 		Engine.canvas.onclick = function () {
 			ball.push(Environment.Entity.Circle.getRandom());
 		};
+		document.onkeyup = function () {
+			if (ball.length > 0) {
+				ball[ball.length - 1].remove();
+				ball.pop();
+			}
+		};
+
 	    Engine.loop();
 	};
 };
@@ -59,53 +67,16 @@ Engine.main = function () {
 
 };
 
-
-
-/* Na classe Engine.Time.Event
-	adicionar um callback que chama uma função caso o evento não foi disparado... uma função alternativa
-	isso permite livrar do hud.draw() ali no main
-*/
 /**
-    INHERTITANCE
-
- FIRST WAY
-function Super() {}
-
-function Son() {
-	Super.apply(this, args);
-}
-
- SECOND WAY
-function Super() {}
-
-function Son() {
-	Super.call(this, arg1, arg2, ...);
-
-}
-Son.prototype = new Super();
-Son.prototype.constructor = Son;
-
- DO THE SECOND WAY!
-*/
-
-
-
-
-/*onload = function () {
-	function Super() {
-		this.name = "Lauro";
-
-		this.exec = function () {
-			alert("." + this.name + ".");
-		};
-	}
-
-	var a = new Super();
-
-	(function (func) {
-		func();
-	})(function () {
-		a.exec(obj);
-	});
-};*/
+ * Inheritance
+ *
+ *
+ * Child = function () {
+ *     Parent.call(this, arguments);
+ * };
+ * Child.prototype = Parent.prototype;
+ * Child.prototype.constructor = Child;
+ *
+ *
+ */
 

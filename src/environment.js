@@ -1,6 +1,10 @@
 /*********** Environment ***********/
 function Environment() {}
 
+/*Environment.width = Engine.canvas.width;
+
+Environment.height = Engine.canvas.height;*/
+
 /*********** Environment.Entity ***********/
 // extende diretamente de Util.InstanceManagement
 Environment.Entity = function (position, velocity, mass) {
@@ -10,11 +14,22 @@ Environment.Entity = function (position, velocity, mass) {
 
 	// aplica gravidade
 	this.acceleration = new Util.Vector(0, Environment.Entity.GRAVITY_FORCE);
-
 	// adiciona a instância ao array da classe
 	this.add(true);
 };
+
 Util.applyInstanceManagement(Environment.Entity);
+
+Environment.Entity.update = function () {
+	for (var i in this.activeInstance) {
+		this.activeInstance[i].update();
+		this.activeInstance[i].draw();
+	}
+
+	for (var i in this.idleInstance) {
+		this.idleInstance[i].draw();
+	}
+};
 
 // constante da gravidade (9.8m/s)
 Environment.Entity.GRAVITY_FORCE = 980;
@@ -22,14 +37,14 @@ Environment.Entity.GRAVITY_FORCE = 980;
 /*********** Environment.Entity.Circle ***********/
 Environment.Entity.Circle = function (position, velocity, radius, color) {
 	// extende de Entity
-	Environment.Entity.call(this, new Util.Vector(0, 0), velocity, radius * radius);
+	Environment.Entity.call(this, position, velocity, radius * radius);
 
 	this.radius = radius;
 	this.color = color;
 };
 
 // extends Entity
-Environment.Entity.Circle.prototype = new Environment.Entity();
+Environment.Entity.Circle.prototype = Environment.Entity.prototype;
 Environment.Entity.Circle.prototype.constructor = Environment.Entity.Circle;
 
 
@@ -39,16 +54,15 @@ Environment.Entity.Circle.prototype.draw = function () {
 	Engine.context.beginPath();
 	Engine.context.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI, false);
 	Engine.context.fill();
+
 };
 
 Environment.Entity.Circle.prototype.update = function () {
 	// atualiza a posição baseado na velocidade
-	this.position.x += this.velocity.x / Engine.fps;
-	this.position.y += this.velocity.y / Engine.fps;
+	this.position = this.position.add(Engine.Time.getFrameVector(this.velocity));
 
 	// atualiza a velocidade baseado na aceleração
-	this.velocity.x += this.acceleration.x / Engine.fps;
-	this.velocity.y += this.acceleration.y / Engine.fps;
+	this.velocity = this.velocity.add(Engine.Time.getFrameVector(this.acceleration));
 
 
 	if (this.position.x > Engine.canvas.width - this.radius) {
@@ -70,9 +84,6 @@ Environment.Entity.Circle.prototype.update = function () {
 		this.position.y = this.radius;
 		this.velocity.y *= -1;
 	}
-
-	// desenha o elemento na tela
-	this.draw();
 };
 
 Environment.Entity.Circle.getRandom = function () {

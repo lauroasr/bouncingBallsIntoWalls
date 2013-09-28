@@ -52,12 +52,8 @@ Engine.loop = function () {
 	// executa a função main
 	Engine.main();
 
-	//Environment.Entity.activeInstance.length = 0;
-
-	Engine.Time.Event.updateInstances();
-	Environment.Entity.updateInstances();
-
-	Engine.context.fillText(Util.Time.getCurrentMilliseconds(), 100, 100);
+	Engine.Time.Event.update();
+	Environment.Entity.update();
 
 	// calcula o tempo levado no loop
 	Engine.Time.loopTimeTaken = Util.Time.getCurrentMilliseconds() - Engine.Time.initialLoopTime;
@@ -93,7 +89,13 @@ Engine.Time.loopTimeTaken = null;
 
 // atualiza o fps baseado no tempo de loop tomado
 Engine.Time.updateFps = function (totalTimeTaken) {
-	Engine.fps = Math.round(1000 / totalTimeTaken);
+	Engine.Time.fps = Math.round(1000 / totalTimeTaken);
+
+	if (Engine.Time.fps < Engine.Time.MINIMUM_FRAMES_PER_SECOND) {
+		Engine.Time.fpsFrame = Engine.Time.MINIMUM_FRAMES_PER_SECOND;
+	} else {
+		Engine.Time.fpsFrame = Engine.Time.fps;
+	}
 };
 
 // calcula o tempo de espera
@@ -115,6 +117,14 @@ Engine.Time.getTimeout = (function () {
 		};
 	}
 }());
+
+// fps (que respeita os limites das constantes) para ser usado no getFrameVector
+Engine.Time.fpsFrame = null;
+
+// converte por segundo para por frame
+Engine.Time.getFrameVector = function (vector) {
+	return vector.divide(Engine.Time.fpsFrame);
+};
 
 
 
@@ -159,7 +169,7 @@ Engine.Time.Event.prototype.update = function () {
 Engine.Window = function () {};
 
 /*********** Engine.Window.Debug ***********/
-Engine.Window.Debug = function (position, showFpsGraph, updateRate, getString) {
+Engine.Window.Debug = function (position, showFpsGraph, updateRate, getStringArray) {
 	this.position = position;
 
 	// atributos padroes que podem ser alterados
@@ -170,7 +180,7 @@ Engine.Window.Debug = function (position, showFpsGraph, updateRate, getString) {
 	this.width = 100;
 	this.height = 100;
 	// função que recupera uma string de informações
-	this.getString = getString;
+	this.getStringArray = getStringArray;
 
 	if (showFpsGraph) {
 		this.draw1 = this.draw;
@@ -191,26 +201,30 @@ Engine.Window.Debug = function (position, showFpsGraph, updateRate, getString) {
 		this.graph = new Util.Graph(this.position.add(graphOffset), "black", graphBars, graphHeight, graphBarWidth);
 
 		this.update1 = this.update;
-
 		this.update = function () {
 			this.update1();
 
-			this.graph.update(Engine.fps);
+			this.graph.update(Engine.Time.fps);
 			// atualiza a cor do gráfico baseado no fps atual
 			this.graph.barColor = Util.Color.getTransition((Engine.Time.fps - Engine.Time.MINIMUM_FRAMES_PER_SECOND) / Engine.Time.MINIMUM_FRAMES_PER_SECOND, 0.5);
 		};
 	}
 
-	if (getString) {
+	if (getStringArray) {
 		this.draw2 = this.draw;
-
 		this.draw = function () {
 			this.draw2();
 
 			// imprime a string
-			Engine.context.font = "12px Arial";
+			Engine.context.font = "12px Consolas";
 			Engine.context.textAlign = "right";
-			Engine.context.fillText(this.getString(), this.position.x + this.width, this.position.y + this.height + 12);
+			Engine.context.fillStyle = "black";
+			var info = this.getStringArray(), height = 12;
+			for (var i in info) {
+				Engine.context.fillText(info[i], this.position.x + this.width, this.position.y + this.height + height);
+				height += 12;
+			}
+
 		}
 	}
 

@@ -41,7 +41,14 @@ Util.Vector.getRandom = function (minimum, maximum) {
 
 Util.Vector.prototype.add = function (that) {
 	return new Util.Vector(this.x + that.x, this.y + that.y);
+};
 
+Util.Vector.prototype.divide = function (number) {
+	return new Util.Vector(this.x / number, this.y / number);
+};
+
+Util.Vector.prototype.toString = function () {
+	return this.x + ", " + this.y;
 };
 
 /*********** Util.InstanceManagement ***********/
@@ -49,7 +56,7 @@ Util.applyInstanceManagement = function (Class) {
 	Class.activeInstance = [];
 	Class.idleInstance = [];
 
-	Class.updateInstances = function () {
+	Class.update = function () {
 		for (var i in this.activeInstance) {
 			this.activeInstance[i].update();
 		}
@@ -67,8 +74,8 @@ Util.applyInstanceManagement = function (Class) {
 	Class.prototype.remove = function () {
 		for (var i = this.index; i < this.array.length - 1;  i++) {
 			this.array[i] = this.array[i + 1];
-			this.array[i].index--;
 		}
+		this.array.pop();
 	};
 
 	Class.prototype.pause = function () {
