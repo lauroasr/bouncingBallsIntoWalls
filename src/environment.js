@@ -1,93 +1,126 @@
 /*********** Environment ***********/
 function Environment() {}
 
-/*Environment.width = Engine.canvas.width;
+Environment.initialize = function (width, height) {
+	// cria um canvas para buffer
+	this.canvas = document.createElement("canvas");
+	this.canvas.width = width;
+	this.canvas.height = height;
+	this.canvas.style.display = "none";
+	this.context = this.canvas.getContext("2d");
+};
 
-Environment.height = Engine.canvas.height;*/
+// vetor da posição do ambiente
+Environment.position = null;
 
-/*********** Environment.Entity ***********/
-// extende diretamente de Util.InstanceManagement
-Environment.Entity = function (position, velocity, mass) {
-	this.position = position;
+// largura do ambiente
+Environment.width = null;
+
+// altura do ambiente
+Environment.height = null;
+
+// quadros por segundo, com limites
+Environment.framesPerSecond = null;
+
+// converte por segundo para por frame
+Environment.getFrameVector = function (vector) {
+	return vector.divide(Engine.framesPerSecond);
+};
+
+Environment.update = function () {
+	Environment.framesPerSecond = Math.max(Engine.framesPerSecond, Engine.MINIMUM_FRAMES_PER_SECOND);
+
+	Environment.Entity.update();
+	Environment.Entity.draw();
+};
+
+Environment.Map = function () {};
+
+/*********** Environment.Entity extends Util.Management ***********/
+Environment.Entity = function (body, velocity) {
 	this.velocity = velocity;
-	this.mass = mass;
-
 	// aplica gravidade
-	this.acceleration = new Util.Vector(0, Environment.Entity.GRAVITY_FORCE);
+	this.acceleration = new Util.Vector(0, this.gravityForce);
+
+	this.body = body;
+
+
 	// adiciona a instância ao array da classe
 	this.add(true);
 };
 
-Util.applyInstanceManagement(Environment.Entity);
+Util.extend(Environment.Entity, Util.Management, true);
 
-Environment.Entity.update = function () {
-	for (var i in this.activeInstance) {
-		this.activeInstance[i].update();
-		this.activeInstance[i].draw();
+Environment.Entity.draw = function () {
+	var i;
+
+	for (i in this.idleInstances) {
+		this.idleInstances[i].draw();
 	}
-
-	for (var i in this.idleInstance) {
-		this.idleInstance[i].draw();
+	for (i in this.activeInstances) {
+		this.activeInstances[i].draw();
 	}
 };
 
-// constante da gravidade (9.8m/s)
-Environment.Entity.GRAVITY_FORCE = 980;
+/* atributos de instância */
+Environment.Entity.prototype.gravityForce = 980;
+Environment.Entity.prototype.coeficientOfRestitution = .5;
+Environment.Entity.prototype.frictionForce = .1;
 
-/*********** Environment.Entity.Circle ***********/
-Environment.Entity.Circle = function (position, velocity, radius, color) {
-	// extende de Entity
-	Environment.Entity.call(this, position, velocity, radius * radius);
+Environment.Entity.prototype.update = function () {
+	this.body.position = this.body.position.add(Environment.getFrameVector(this.velocity));
+	this.velocity = this.velocity.add(Environment.getFrameVector(this.acceleration));
 
-	this.radius = radius;
-	this.color = color;
+	// CHECK FOR COLLISIONS
+	// RESOLVE COLLISION IF COLLIDING
 };
 
-// extends Entity
-Environment.Entity.Circle.prototype = Environment.Entity.prototype;
-Environment.Entity.Circle.prototype.constructor = Environment.Entity.Circle;
 
 
-// desenha o círculo na tela
-Environment.Entity.Circle.prototype.draw = function () {
-	Engine.context.fillStyle = this.color;
-	Engine.context.beginPath();
-	Engine.context.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI, false);
-	Engine.context.fill();
-
-};
-
-Environment.Entity.Circle.prototype.update = function () {
+/*********** Environment.Entity.Circle extends Environment.Entity ***********/
+Environment.Circle.prototype.update = function () {
 	// atualiza a posição baseado na velocidade
-	this.position = this.position.add(Engine.Time.getFrameVector(this.velocity));
+	this.position = this.position.add(Environment.getFrameVector(this.velocity));
 
 	// atualiza a velocidade baseado na aceleração
-	this.velocity = this.velocity.add(Engine.Time.getFrameVector(this.acceleration));
+	this.velocity = this.velocity.add(Environment.getFrameVector(this.acceleration));
 
 
-	if (this.position.x > Engine.canvas.width - this.radius) {
-		this.position.x = Engine.canvas.width - this.radius;
-		this.velocity.x *= -1;
-	} else if (this.position.x < this.radius) {
-		this.position.x = this.radius;
-		this.velocity.x *= -1;
+	// checa se bateu na esquerda
+	if (this.position.x < Environment.position.x + this.radius) {
+		this.position.x = Environment.position.x + this.radius;
+		this.velocity.x *= -this.coeficientOfRestitution;
+	}
+	// checa se bateu na direita
+	else if (this.position.x > Environment.width - this.radius) {
+		this.position.x = Environment.width - this.radius;
+		this.velocity.x *= -this.coeficientOfRestitution;
 	}
 
-	if (this.position.y > Engine.canvas.height - this.radius) {
-		this.position.y = Engine.canvas.height - this.radius;
-		this.velocity.y *= -0.5;
-		this.velocity.x *= 0.8;
-		if (this.velocity.y < 60 && this.velocity.y > -60) { // evita que o elemento fique se movimentando para sempre
+	// checa se bateu em cima
+	if (this.position.y < Environment.position.y + this.radius) {
+		this.position.y = Environment.position.y + this.radius;
+		this.velocity.y *= -this.coeficientOfRestitution;
+	}
+	// checa se bateu em baixo
+	else if (this.position.y > Environment.height - this.radius) {
+		//this.velocity.y -= this.position.y + this.radius - Environment.height; ENVIRONMENT OFFSET CORRECTION
+
+		this.position.y = Environment.height - this.radius;
+		this.velocity.y *= -this.coeficientOfRestitution;
+
+		if (this.velocity.y < 60 && this.velocity.y > -60) {
 			this.velocity.y = 0;
+			// aplica atrito
+			this.velocity.x -= this.velocity.x * this.frictionForce;
 		}
-	} else if (this.position.y < this.radius) {
-		this.position.y = this.radius;
-		this.velocity.y *= -1;
 	}
 };
 
-Environment.Entity.Circle.getRandom = function () {
-	return new Environment.Entity.Circle(new Util.Vector(0, 0), Util.Vector.getRandom(1000, 2000), Util.Number.getRandomInteger(20, 100), Util.Color.getRandomHexadecimal());
+Environment.Circle.getRandom = function () {
+	var radius = Util.Number.getRandomInteger(20, 100);
+	return new Environment.Circle(new Util.Vector(radius, radius), Util.Vector.getRandom(1000, 2000), radius, Util.Color.getRandomHexadecimal());
 };
+
 
 

@@ -1,7 +1,3 @@
-// array de bolas
-var ball = [], debug;
-
-
 /*		cx.save();
 		
 		// TEXT
@@ -34,49 +30,56 @@ var ball = [], debug;
  b.newVelocity = (b.velocity * (b.mass - a.mass) + 2 * a.mass * a.velocity) / (b.mass + a.mass)
 
  */
-Engine.beforeLoop = function () {
-	debug = new Engine.Window.Debug(new Util.Vector(Engine.canvas.width - 105, 5), true, 1000, function () {
-		return [
-			Environment.Entity.activeInstance.length + " entities",
-			Util.Time.getCurrentMilliseconds()
-		];
-	});
 
-	Engine.context.fillText("Press any key to start the loop", 100, 100);
+var a;
+
+onload = function () {
+	Engine.initialize();
+
+	/*var numberOfSides = 10,
+		size = 100,
+		Xcenter = 500,
+		Ycenter = 500;
+
+	Engine.context.beginPath();
+	Engine.context.moveTo (Xcenter +  size * Math.cos(0), Ycenter +  size *  Math.sin(0));
+
+	for (var i = 1; i <= numberOfSides; i += 1) {
+		Engine.context.lineTo (Xcenter + size * Math.cos(i * 2 * Math.PI / numberOfSides), Ycenter + size * Math.sin(i * 2 * Math.PI / numberOfSides));
+	}
+
+	Engine.context.strokeStyle = "#000000";
+	Engine.context.stroke();*/
 
 
+	a = new Util.Polygon(Engine.context, new Util.Vector(100, 100), [new Util.Vector(50, 50), new Util.Vector(-100, 0)], "pink");
+	a.draw();
 
-	document.onkeyup = function () {
-		Engine.canvas.onclick = function () {
-			ball.push(Environment.Entity.Circle.getRandom());
-		};
-		document.onkeyup = function () {
-			if (ball.length > 0) {
-				ball[ball.length - 1].remove();
-				ball.pop();
-			}
-		};
+	var b = Util.Polygon.getRegular(Engine.context, new Util.Vector(500, 500), 3, 100, "orange");
+	b.draw();
 
-	    Engine.loop();
-	};
+	console.log(a.isIntersecting(b));
+
+	Engine.canvas.onmousemove = function (event) {
+
+		Engine.context.clearRect(0, 0, Engine.canvas.width, Engine.canvas.height);
+		b.setPosition(new Util.Vector(event.clientX, event.clientY));
+		if (a.isIntersecting(b)) {
+			b.color = "gray";
+		} else {
+			b.color = "orange";
+		}
+
+		b.draw();
+		a.draw();
+	}
 };
 
 
 
-Engine.main = function () {
-
-};
-
-/**
- * Inheritance
- *
- *
- * Child = function () {
- *     Parent.call(this, arguments);
- * };
- * Child.prototype = Parent.prototype;
- * Child.prototype.constructor = Child;
- *
- *
- */
+function print(message, x, y) {
+	Engine.context.font = "12px Arial";
+	Engine.context.fillStyle = "black";
+	Engine.context.fillText(message, x, y);
+}
 
