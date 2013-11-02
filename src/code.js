@@ -36,35 +36,22 @@ var a;
 onload = function () {
 	Engine.initialize();
 
-	/*var numberOfSides = 10,
-		size = 100,
-		Xcenter = 500,
-		Ycenter = 500;
+	console.log(new Util.Vector(-1, -2).getLength());
 
-	Engine.context.beginPath();
-	Engine.context.moveTo (Xcenter +  size * Math.cos(0), Ycenter +  size *  Math.sin(0));
+	a = new Util.Circle(Engine.context, new Util.Vector(100, 100), 50, "blue");
 
-	for (var i = 1; i <= numberOfSides; i += 1) {
-		Engine.context.lineTo (Xcenter + size * Math.cos(i * 2 * Math.PI / numberOfSides), Ycenter + size * Math.sin(i * 2 * Math.PI / numberOfSides));
-	}
-
-	Engine.context.strokeStyle = "#000000";
-	Engine.context.stroke();*/
-
-
-	a = new Util.Polygon(Engine.context, new Util.Vector(100, 100), [new Util.Vector(50, 50), new Util.Vector(-100, 0)], "pink");
+	a = Util.Polygon.getRegular(Engine.context, new Util.Vector(500, 200), 5, 50, "green");
 	a.draw();
 
-	var b = Util.Polygon.getRegular(Engine.context, new Util.Vector(500, 500), 3, 100, "orange");
+	var b = new Util.Circle(Engine.context, new Util.Vector(0, 0), 50, "orange");
 	b.draw();
 
-	console.log(a.isIntersecting(b));
-
 	Engine.canvas.onmousemove = function (event) {
-
 		Engine.context.clearRect(0, 0, Engine.canvas.width, Engine.canvas.height);
-		b.setPosition(new Util.Vector(event.clientX, event.clientY));
-		if (a.isIntersecting(b)) {
+		b.position = new Util.Vector(event.clientX, event.clientY);
+
+		var intersects = b.isIntersecting(a);
+		if (intersects) {
 			b.color = "gray";
 		} else {
 			b.color = "orange";
